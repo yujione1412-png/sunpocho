@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>寸法帳 | 不動産サイズ早見・変換</title>
+<meta name="theme-color" content="#16324F">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="寸法帳">
+<link rel="manifest" href="./manifest.json">
+<link rel="icon" type="image/png" sizes="32x32" href="./icons/favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png">
+<link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
+<style>
+:root{
+  --ink:#16324F;        /* 藍 */
+  --ink-soft:#43597a;
+  --paper:#FAFAF7;      /* 方眼紙 */
+  --line:#DCE3E9;
+  --grid:#EEF1F4;
+  --shu:#C73E3A;        /* 朱印 */
+  --tatami:#8A9A5B;     /* 畳 */
+  --radius:14px;
+  font-size:16px;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{
+  font-family:"Hiragino Kaku Gothic ProN","Hiragino Sans","Yu Gothic Medium","Yu Gothic",Meiryo,sans-serif;
+  background:
+    linear-gradient(var(--grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid) 1px, transparent 1px),
+    var(--paper);
+  background-size:24px 24px,24px 24px,auto;
+  color:var(--ink);
+  display:flex;flex-direction:column;
+  min-height:100dvh;
+  -webkit-font-smoothing:antialiased;
+}
+.num{font-variant-numeric:tabular-nums;font-family:"Avenir Next","Helvetica Neue",Arial,sans-serif}
+
+/* ---------- ヘッダー ---------- */
+header{
+  position:sticky;top:0;z-index:20;
+  background:var(--ink);color:#fff;
+  padding:calc(env(safe-area-inset-top,0px) + 12px) 18px 12px;
+  display:flex;align-items:center;gap:12px;
+  box-shadow:0 1px 0 rgba(0,0,0,.15);
+}
+.hanko{
+  width:38px;height:38px;border:2.5px solid var(--shu);border-radius:50%;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  color:var(--shu);font-family:"Hiragino Mincho ProN","Yu Mincho",serif;
+  font-weight:700;font-size:20px;transform:rotate(-6deg);
+  background:rgba(255,255,255,.04);
+}
+header h1{font-size:18px;font-weight:700;letter-spacing:.14em}
+header p{font-size:11px;opacity:.75;letter-spacing:.06em;margin-top:2px}
+
+/* ---------- タブ(下部) ---------- */
+nav{
+  position:sticky;bottom:0;z-index:20;margin-top:auto;
+  background:#fff;border-top:1px solid var(--line);
+  display:flex;
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+nav button{
+  flex:1;padding:12px 0 10px;background:none;border:none;cursor:pointer;
+  font-family:inherit;font-size:12px;font-weight:700;letter-spacing:.1em;
+  color:#9AA7B4;display:flex;flex-direction:column;align-items:center;gap:3px;
+}
+nav button svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+nav button.active{color:var(--shu)}
+
+/* ---------- 共通レイアウト ---------- */
+main{flex:1;width:100%;max-width:640px;margin:0 auto;padding:18px 16px 28px}
+.page{display:none}
+.page.show{display:block;animation:fade .18s ease}
+@keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+
+.card{
+  background:#fff;border:1px solid var(--line);border-radius:var(--radius);
+  padding:16px;margin-bottom:16px;
+  box-shadow:0 1px 3px rgba(22,50,79,.05);
+}
+.card h2{
+  font-size:13px;font-weight:700;letter-spacing:.12em;color:var(--ink-soft);
+  display:flex;align-items:center;gap:8px;margin-bottom:12px;
+}
+.card h2::before{content:"";width:14px;height:3px;background:var(--shu);border-radius:2px}
+.note{font-size:11px;color:#8b96a3;line-height:1.7;margin-top:10px}
+
+/* ---------- 変換ページ ---------- */
+.field{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.field label{
+  width:64px;flex-shrink:0;text-align:center;
+  font-size:13px;font-weight:700;color:var(--ink);
+  background:var(--grid);border-radius:8px;padding:8px 0;
+}
+.field input{
+  flex:1;min-width:0;
+  font-size:24px;font-weight:600;text-align:right;
+  padding:8px 12px;border:1.5px solid var(--line);border-radius:10px;
+  color:var(--ink);background:#fff;font-family:"Avenir Next","Helvetica Neue",Arial,sans-serif;
+  font-variant-numeric:tabular-nums;
+}
+.field input:focus{outline:none;border-color:var(--shu)}
+.field .unit{width:34px;font-size:13px;color:var(--ink-soft);font-weight:700}
+.clear-btn{
+  width:100%;margin-top:4px;padding:10px;border:none;border-radius:10px;cursor:pointer;
+  background:var(--grid);color:var(--ink-soft);font-family:inherit;font-size:13px;font-weight:700;letter-spacing:.1em;
+}
+.clear-btn:active{background:#e2e7ec}
+
+.tvresult{
+  display:flex;justify-content:space-around;text-align:center;
+  background:var(--grid);border-radius:10px;padding:14px 8px;margin-top:12px;
+}
+.tvresult div span{display:block}
+.tvresult .v{font-size:22px;font-weight:700;font-variant-numeric:tabular-nums}
+.tvresult .k{font-size:11px;color:var(--ink-soft);margin-top:2px}
+
+.jo-select{font-size:12px;color:var(--ink-soft);display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.jo-select select{
+  font-family:inherit;font-size:13px;padding:6px 10px;border:1.5px solid var(--line);
+  border-radius:8px;color:var(--ink);background:#fff;
+}
+
+/* ---------- 一覧ページ ---------- */
+.chips{display:flex;gap:8px;overflow-x:auto;padding-bottom:12px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chips button{
+  flex-shrink:0;padding:8px 14px;border-radius:999px;border:1.5px solid var(--line);
+  background:#fff;color:var(--ink-soft);font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;
+}
+.chips button.active{background:var(--ink);border-color:var(--ink);color:#fff}
+
+table{width:100%;border-collapse:collapse;font-size:14px}
+th{
+  text-align:right;font-size:11px;font-weight:700;color:var(--ink-soft);letter-spacing:.06em;
+  border-bottom:1.5px solid var(--ink);padding:6px 8px;white-space:nowrap;
+}
+th:first-child,td:first-child{text-align:left}
+td{
+  padding:9px 8px;border-bottom:1px solid var(--grid);text-align:right;
+  font-variant-numeric:tabular-nums;white-space:nowrap;
+}
+td:first-child{font-weight:700}
+tr:nth-child(even) td{background:#FCFCFA}
+.tbl-wrap{overflow-x:auto}
+.sec{display:none}
+.sec.show{display:block;animation:fade .18s ease}
+
+/* ---------- 履歴 ---------- */
+.hist-btn{
+  margin-left:auto;flex-shrink:0;
+  width:38px;height:38px;border-radius:50%;border:1.5px solid rgba(255,255,255,.35);
+  background:none;color:#fff;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+}
+.hist-btn svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.hist-btn:active{background:rgba(255,255,255,.12)}
+
+.overlay{
+  position:fixed;inset:0;z-index:40;display:none;
+  background:rgba(22,50,79,.45);
+}
+.overlay.show{display:flex;align-items:flex-end;justify-content:center;animation:fade .15s ease}
+.sheet{
+  background:var(--paper);width:100%;max-width:640px;
+  border-radius:18px 18px 0 0;max-height:75dvh;display:flex;flex-direction:column;
+  padding-bottom:env(safe-area-inset-bottom,0px);
+  animation:up .2s ease;
+}
+@keyframes up{from{transform:translateY(24px);opacity:.6}to{transform:none;opacity:1}}
+.sheet-head{
+  display:flex;align-items:center;gap:10px;padding:16px 18px 12px;
+  border-bottom:1px solid var(--line);
+}
+.sheet-head h3{font-size:15px;letter-spacing:.12em}
+.sheet-head .close{
+  margin-left:auto;border:none;background:var(--grid);color:var(--ink-soft);
+  width:32px;height:32px;border-radius:50%;font-size:16px;cursor:pointer;font-family:inherit;
+}
+.hist-list{overflow-y:auto;padding:6px 18px;flex:1}
+.hist-item{
+  padding:11px 2px;border-bottom:1px solid var(--grid);
+  display:flex;flex-direction:column;gap:2px;
+}
+.hist-item .expr{font-size:14px;font-weight:600;font-variant-numeric:tabular-nums}
+.hist-item .meta{font-size:11px;color:#8b96a3}
+.hist-empty{padding:36px 18px;text-align:center;color:#9AA7B4;font-size:13px;line-height:1.8}
+.hist-clear{
+  margin:10px 18px 14px;padding:11px;border:none;border-radius:10px;cursor:pointer;
+  background:#fff;border:1.5px solid var(--line);color:var(--shu);
+  font-family:inherit;font-size:13px;font-weight:700;letter-spacing:.1em;
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="hanko">寸</div>
+  <div>
+    <h1>寸法帳</h1>
+    <p>不動産営業のためのサイズ早見・変換</p>
+  </div>
+  <button class="hist-btn" onclick="histOpen()" aria-label="計算履歴を開く">
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+  </button>
+</header>
+
+<!-- 履歴シート -->
+<div class="overlay" id="histOverlay" onclick="if(event.target===this)histClose()">
+  <div class="sheet" role="dialog" aria-label="計算履歴">
+    <div class="sheet-head">
+      <h3>計算履歴</h3>
+      <button class="close" onclick="histClose()" aria-label="閉じる">✕</button>
+    </div>
+    <div class="hist-list" id="histList"></div>
+    <button class="hist-clear" onclick="histClearAll()">履歴をすべて削除</button>
+  </div>
+</div>
+
+<main>
+
+<!-- ============ 変換ページ ============ -->
+<div class="page show" id="page-conv">
+
+  <div class="card">
+    <h2>面積かんたん変換</h2>
+    <div class="jo-select">
+      畳の基準:
+      <select id="joStd" onchange="areaRecalc()">
+        <option value="1.62" selected>不動産表示規約(1畳=1.62㎡)</option>
+        <option value="1.8241">京間(1.824㎡)</option>
+        <option value="1.6562">中京間(1.656㎡)</option>
+        <option value="1.5488">江戸間(1.549㎡)</option>
+        <option value="1.4450">団地間(1.445㎡)</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>㎡</label>
+      <input type="number" inputmode="decimal" id="in-m2" placeholder="0" oninput="areaFrom('m2')">
+      <span class="unit">㎡</span>
+    </div>
+    <div class="field">
+      <label>畳</label>
+      <input type="number" inputmode="decimal" id="in-jo" placeholder="0" oninput="areaFrom('jo')">
+      <span class="unit">畳</span>
+    </div>
+    <div class="field">
+      <label>坪</label>
+      <input type="number" inputmode="decimal" id="in-tsubo" placeholder="0" oninput="areaFrom('tsubo')">
+      <span class="unit">坪</span>
+    </div>
+    <button class="clear-btn" onclick="areaClear()">クリア</button>
+    <p class="note">どれか1つに入力すると、残り2つが自動計算されます。1坪=約3.306㎡(400/121㎡)で換算。</p>
+  </div>
+
+  <div class="card">
+    <h2>テレビ インチ → cm</h2>
+    <div class="field">
+      <label>インチ</label>
+      <input type="number" inputmode="decimal" id="in-inch" placeholder="55" oninput="tvCalc()">
+      <span class="unit">型</span>
+    </div>
+    <div class="tvresult">
+      <div><span class="v num" id="tv-w">–</span><span class="k">幅 cm</span></div>
+      <div><span class="v num" id="tv-h">–</span><span class="k">高さ cm</span></div>
+      <div><span class="v num" id="tv-d">–</span><span class="k">対角 cm</span></div>
+    </div>
+    <p class="note">画面比率16:9・画面のみの寸法です。実際の製品はベゼル(枠)分やや大きくなります。テレビ台は画面幅+左右10cm以上が目安。</p>
+  </div>
+
+  <div class="card">
+    <h2>長さ変換(尺・間・m)</h2>
+    <div class="field">
+      <label>m</label>
+      <input type="number" inputmode="decimal" id="in-m" placeholder="0" oninput="lenFrom('m')">
+      <span class="unit">m</span>
+    </div>
+    <div class="field">
+      <label>尺</label>
+      <input type="number" inputmode="decimal" id="in-shaku" placeholder="0" oninput="lenFrom('shaku')">
+      <span class="unit">尺</span>
+    </div>
+    <div class="field">
+      <label>間</label>
+      <input type="number" inputmode="decimal" id="in-ken" placeholder="0" oninput="lenFrom('ken')">
+      <span class="unit">間</span>
+    </div>
+    <button class="clear-btn" onclick="lenClear()">クリア</button>
+    <p class="note">1尺=約30.3cm、1間=6尺=約1.818m。間口の説明などに。</p>
+  </div>
+
+</div>
+
+<!-- ============ 一覧ページ ============ -->
+<div class="page" id="page-list">
+
+  <div class="chips" id="chips">
+    <button class="active" data-sec="sec-jo">畳・㎡</button>
+    <button data-sec="sec-tsubo">坪・㎡</button>
+    <button data-sec="sec-kind">畳の種類</button>
+    <button data-sec="sec-tv">テレビ</button>
+    <button data-sec="sec-bed">ベッド</button>
+    <button data-sec="sec-park">駐車場</button>
+    <button data-sec="sec-setsubi">住宅設備</button>
+  </div>
+
+  <div class="sec show" id="sec-jo">
+    <div class="card">
+      <h2>畳数 → ㎡・坪 早見表</h2>
+      <div class="tbl-wrap"><table id="tbl-jo"></table></div>
+      <p class="note">不動産表示規約の基準(1畳=1.62㎡以上)で計算。坪=㎡×0.3025。</p>
+    </div>
+  </div>
+
+  <div class="sec" id="sec-tsubo">
+    <div class="card">
+      <h2>坪 → ㎡・畳 早見表</h2>
+      <div class="tbl-wrap"><table id="tbl-tsubo"></table></div>
+      <p class="note">1坪=400/121㎡≒3.3058㎡=約2畳。㎡→坪は「㎡×0.3025」で暗算できます。</p>
+    </div>
+  </div>
+
+  <div class="sec" id="sec-kind">
+    <div class="card">
+      <h2>畳の種類と寸法</h2>
+      <div class="tbl-wrap">
+      <table>
+        <tr><th>種類</th><th>寸法</th><th>1畳</th><th>主な地域</th></tr>
+        <tr><td>京間(本間)</td><td>95.5×191cm</td><td>1.824㎡</td><td>関西・中国・九州</td></tr>
+        <tr><td>中京間</td><td>91×182cm</td><td>1.656㎡</td><td>東海・北陸</td></tr>
+        <tr><td>江戸間</td><td>88×176cm</td><td>1.549㎡</td><td>関東・東日本</td></tr>
+        <tr><td>団地間</td><td>85×170cm</td><td>1.445㎡</td><td>公団住宅・アパート</td></tr>
+        <tr><td>表示規約基準</td><td>—</td><td>1.62㎡以上</td><td>広告表示のルール</td></tr>
+      </table>
+      </div>
+      <p class="note">同じ「6畳」でも京間と団地間では約2.3㎡差が出ます。広告の畳数表示は1畳=1.62㎡以上で換算するのがルールです。</p>
+    </div>
+  </div>
+
+  <div class="sec" id="sec-tv">
+    <div class="card">
+      <h2>テレビ画面サイズ(16:9)</h2>
+      <div class="tbl-wrap"><table id="tbl-tv"></table></div>
+      <p class="note">画面のみの寸法。視聴距離の目安は4Kで「画面の高さ×1.5」、フルHDで「×3」。例:55型4K→約1m。</p>
+    </div>
+  </div>
+
+  <div class="sec" id="sec-bed">
+    <div class="card">
+      <h2>ベッド・布団サイズ</h2>
+      <div class="tbl-wrap">
+      <table>
+        <tr><th>種類</th><th>幅×長さ</th><th>目安人数</th></tr>
+        <tr><td>セミシングル</td><td>80×195cm</td><td>1人(省スペース)</td></tr>
+        <tr><td>シングル</td><td>97×195cm</td><td>1人</td></tr>
+        <tr><td>セミダブル</td><td>120×195cm</td><td>1人ゆったり</td></tr>
+        <tr><td>ダブル</td><td>140×195cm</td><td>2人</td></tr>
+        <tr><td>クイーン</td><td>160×195cm</td><td>2人ゆったり</td></tr>
+        <tr><td>キング</td><td>180×195cm</td><td>2人+子ども</td></tr>
+      </table>
+      </div>
+      <p class="note">設置には周囲に通路幅50〜60cmの確保が理想。6畳(江戸間)にダブルベッドは置けますが動線が限られます。</p>
+    </div>
+  </div>
+
+  <div class="sec" id="sec-park">
+    <div class="card">
+      <h2>駐車場・車のサイズ目安</h2>
+      <div class="tbl-wrap">
+      <table>
+        <tr><th>区分</th><th>幅×長さ</th><th>備考</th></tr>
+        <tr><td>軽自動車枠</td><td>2.0×3.6m</td><td>軽専用区画の目安</td></tr>
+        <tr><td>普通車枠(標準)</td><td>2.5×5.0m</td><td>設計上の一般的な目安</td></tr>
+        <tr><td>大型車・ゆとり枠</td><td>2.7〜3.0×5.5〜6.0m</td><td>ミニバン・ドア開閉に余裕</td></tr>
+        <tr><td>車路幅(直角駐車)</td><td>5.0m以上</td><td>切り返しなしの目安</td></tr>
+        <tr><td>機械式(一般的制限)</td><td>幅1.85×高1.55m 前後</td><td>設備により異なる・要確認</td></tr>
+      </table>
+      </div>
+      <p class="note">数値は一般的な設計目安です。物件ごとの区画寸法・機械式の制限(全幅・全高・重量)は必ず現地資料でご確認ください。</p>
+    </div>
+  </div>
+
+  <div class="sec" id="sec-setsubi">
+    <div class="card">
+      <h2>住宅設備の標準寸法</h2>
+      <div class="tbl-wrap">
+      <table>
+        <tr><th>項目</th><th>寸法</th><th>備考</th></tr>
+        <tr><td>天井高(標準)</td><td>2.4m</td><td>建築基準法の最低は2.1m</td></tr>
+        <tr><td>ドア幅(室内)</td><td>約70〜80cm</td><td>枠内有効はやや狭い</td></tr>
+        <tr><td>廊下幅(標準)</td><td>約78〜80cm</td><td>壁芯91cmの場合</td></tr>
+        <tr><td>洗濯機防水パン</td><td>64×64cm</td><td>ドラム式は74×64cmも</td></tr>
+        <tr><td>冷蔵庫置場</td><td>幅70cm前後〜</td><td>放熱スペース左右各2cm目安</td></tr>
+        <tr><td>キッチン天板高さ</td><td>85cm(80/90も)</td><td>目安は身長÷2+5cm</td></tr>
+        <tr><td>浴室サイズ 1216</td><td>120×160cm</td><td>単身向けに多い</td></tr>
+        <tr><td>浴室サイズ 1616</td><td>160×160cm</td><td>ファミリー標準(1坪)</td></tr>
+        <tr><td>バルコニー奥行</td><td>約1.1〜1.5m</td><td>物干しに必要な目安1.1m〜</td></tr>
+      </table>
+      </div>
+      <p class="note">数値は一般的な目安です。実寸は物件の図面・現地でご確認ください。</p>
+    </div>
+  </div>
+
+</div>
+</main>
+
+<nav>
+  <button class="active" id="tab-conv" onclick="showPage('conv')">
+    <svg viewBox="0 0 24 24"><path d="M4 7h13M14 3l4 4-4 4M20 17H7M10 13l-4 4 4 4"/></svg>
+    変換
+  </button>
+  <button id="tab-list" onclick="showPage('list')">
+    <svg viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13"/><circle cx="4" cy="6" r="1"/><circle cx="4" cy="12" r="1"/><circle cx="4" cy="18" r="1"/></svg>
+    一覧表
+  </button>
+</nav>
+
+<script>
+/* ===== 定数 ===== */
+var TSUBO_M2 = 400/121;         // 1坪 = 3.30578…㎡
+var SHAKU_M  = 10/33;           // 1尺 = 0.30303…m
+var KEN_M    = SHAKU_M*6;       // 1間 = 1.8181…m
+var TV_W = 16/Math.sqrt(337);   // 対角→幅係数 0.8716
+var TV_H = 9/Math.sqrt(337);    // 対角→高さ係数 0.4903
+
+function fmt(n,d){
+  if(!isFinite(n)) return "–";
+  d = (d===undefined)?2:d;
+  return Number(n.toFixed(d)).toLocaleString("ja-JP",{maximumFractionDigits:d});
+}
+
+/* ===== ページ切替 ===== */
+function showPage(p){
+  document.getElementById("page-conv").classList.toggle("show", p==="conv");
+  document.getElementById("page-list").classList.toggle("show", p==="list");
+  document.getElementById("tab-conv").classList.toggle("active", p==="conv");
+  document.getElementById("tab-list").classList.toggle("active", p==="list");
+  window.scrollTo(0,0);
+}
+
+/* ===== 計算履歴 ===== */
+var HKEY = "sunpocho-history";
+var hist = [];
+try { hist = JSON.parse(localStorage.getItem(HKEY)) || []; } catch(e) { hist = []; }
+function histSave(){
+  try { localStorage.setItem(HKEY, JSON.stringify(hist.slice(0,50))); } catch(e) {}
+}
+var histTimers = {};
+function histRecord(kind, expr){
+  // 入力が落ち着いてから1件だけ記録(連続入力で履歴が溢れないように)
+  clearTimeout(histTimers[kind]);
+  histTimers[kind] = setTimeout(function(){
+    if(!expr) return;
+    if(hist.length && hist[0].expr === expr) return; // 直前と同じなら記録しない
+    hist.unshift({kind:kind, expr:expr, at:Date.now()});
+    hist = hist.slice(0,50);
+    histSave();
+  }, 900);
+}
+var KIND_LABEL = {area:"面積", tv:"テレビ", len:"長さ"};
+function histRender(){
+  var list = document.getElementById("histList");
+  if(!hist.length){
+    list.innerHTML = '<div class="hist-empty">履歴はまだありません。<br>変換タブで数値を入力すると自動で記録されます。</div>';
+    return;
+  }
+  list.innerHTML = hist.map(function(h){
+    var d = new Date(h.at);
+    var pad = function(n){ return (n<10?"0":"")+n; };
+    var when = (d.getMonth()+1)+"/"+d.getDate()+" "+pad(d.getHours())+":"+pad(d.getMinutes());
+    return '<div class="hist-item"><span class="expr">'+h.expr+'</span><span class="meta">'+(KIND_LABEL[h.kind]||"")+' ・ '+when+'</span></div>';
+  }).join("");
+}
+function histOpen(){ histRender(); document.getElementById("histOverlay").classList.add("show"); }
+function histClose(){ document.getElementById("histOverlay").classList.remove("show"); }
+function histClearAll(){
+  hist = []; histSave(); histRender();
+}
+
+/* ===== 面積変換 ===== */
+var areaLast = null;
+function joM2(){ return parseFloat(document.getElementById("joStd").value); }
+function areaFrom(src){
+  areaLast = src;
+  var v = parseFloat(document.getElementById("in-"+src).value);
+  var m2;
+  if(isNaN(v)){ areaSet(src, NaN); return; }
+  if(src==="m2") m2 = v;
+  if(src==="jo") m2 = v*joM2();
+  if(src==="tsubo") m2 = v*TSUBO_M2;
+  areaSet(src, m2);
+}
+function areaSet(src, m2){
+  var f = {m2:m2, jo:m2/joM2(), tsubo:m2/TSUBO_M2};
+  ["m2","jo","tsubo"].forEach(function(k){
+    if(k===src) return;
+    document.getElementById("in-"+k).value = isNaN(m2) ? "" : Number(f[k].toFixed(3));
+  });
+  if(!isNaN(m2)){
+    var std = document.getElementById("joStd");
+    var stdName = std.options[std.selectedIndex].text.split("(")[0];
+    histRecord("area", fmt(f.m2,2)+"㎡ = "+fmt(f.jo,2)+"畳 = "+fmt(f.tsubo,2)+"坪("+stdName+")");
+  }
+}
+function areaRecalc(){ if(areaLast) areaFrom(areaLast); }
+function areaClear(){
+  ["m2","jo","tsubo"].forEach(function(k){ document.getElementById("in-"+k).value=""; });
+  areaLast = null;
+}
+
+/* ===== テレビ変換 ===== */
+function tvCalc(){
+  var v = parseFloat(document.getElementById("in-inch").value);
+  var w = document.getElementById("tv-w"), h = document.getElementById("tv-h"), d = document.getElementById("tv-d");
+  if(isNaN(v)||v<=0){ w.textContent=h.textContent=d.textContent="–"; return; }
+  var diag = v*2.54;
+  w.textContent = fmt(diag*TV_W,1);
+  h.textContent = fmt(diag*TV_H,1);
+  d.textContent = fmt(diag,1);
+  histRecord("tv", v+"型 → 幅"+fmt(diag*TV_W,1)+" × 高さ"+fmt(diag*TV_H,1)+"cm");
+}
+
+/* ===== 長さ変換 ===== */
+function lenFrom(src){
+  var v = parseFloat(document.getElementById("in-"+src).value);
+  var m;
+  if(src==="m") m=v;
+  if(src==="shaku") m=v*SHAKU_M;
+  if(src==="ken") m=v*KEN_M;
+  var f = {m:m, shaku:m/SHAKU_M, ken:m/KEN_M};
+  ["m","shaku","ken"].forEach(function(k){
+    if(k===src) return;
+    document.getElementById("in-"+k).value = isNaN(m) ? "" : Number(f[k].toFixed(3));
+  });
+  if(!isNaN(m)) histRecord("len", fmt(f.m,3)+"m = "+fmt(f.shaku,2)+"尺 = "+fmt(f.ken,3)+"間");
+}
+function lenClear(){
+  ["m","shaku","ken"].forEach(function(k){ document.getElementById("in-"+k).value=""; });
+}
+
+/* ===== 一覧:チップ切替 ===== */
+document.getElementById("chips").addEventListener("click", function(e){
+  var btn = e.target.closest("button"); if(!btn) return;
+  this.querySelectorAll("button").forEach(function(b){ b.classList.remove("active"); });
+  btn.classList.add("active");
+  document.querySelectorAll(".sec").forEach(function(s){ s.classList.remove("show"); });
+  document.getElementById(btn.dataset.sec).classList.add("show");
+});
+
+/* ===== 一覧:表を生成 ===== */
+(function(){
+  // 畳→㎡・坪
+  var jos = [1,2,3,4,4.5,5,6,7,8,10,12,14,16,18,20];
+  var t = "<tr><th>畳数</th><th>㎡</th><th>坪</th></tr>";
+  jos.forEach(function(j){
+    var m2 = j*1.62;
+    t += "<tr><td>"+j+"畳</td><td>"+fmt(m2,2)+"㎡</td><td>"+fmt(m2/TSUBO_M2,2)+"坪</td></tr>";
+  });
+  document.getElementById("tbl-jo").innerHTML = t;
+
+  // 坪→㎡・畳
+  var tsubos = [1,5,10,15,20,25,30,35,40,50,60,70,80,100,150,200];
+  t = "<tr><th>坪数</th><th>㎡</th><th>畳(約)</th></tr>";
+  tsubos.forEach(function(tb){
+    var m2 = tb*TSUBO_M2;
+    t += "<tr><td>"+tb+"坪</td><td>"+fmt(m2,2)+"㎡</td><td>"+fmt(tb*2,0)+"畳</td></tr>";
+  });
+  document.getElementById("tbl-tsubo").innerHTML = t;
+
+  // テレビ
+  var inches = [24,32,40,43,50,55,60,65,70,75,85,100];
+  t = "<tr><th>型</th><th>幅</th><th>高さ</th><th>対角</th></tr>";
+  inches.forEach(function(i){
+    var d = i*2.54;
+    t += "<tr><td>"+i+"型</td><td>"+fmt(d*TV_W,1)+"cm</td><td>"+fmt(d*TV_H,1)+"cm</td><td>"+fmt(d,1)+"cm</td></tr>";
+  });
+  document.getElementById("tbl-tv").innerHTML = t;
+})();
+</script>
+</body>
+</html>
